@@ -8,11 +8,10 @@ updater = Updater(token=TOKEN) # The Updater class continuously fetches new upda
 
 dispatcher = updater.dispatcher # For quicker access to the Dispatcher used by your Updater
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', # you will know when (and why) things don't work as expected
-                    level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO) # you will know when (and why) things don't work as expected
 
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!\nYour chat id is: "+str(update.effective_chat.id))
 
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
