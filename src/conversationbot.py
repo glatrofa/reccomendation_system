@@ -59,7 +59,7 @@ def pizza_suggestion(update: Update, _: CallbackContext):
     logger.info("User name: %s, user choise: %s", user.first_name, update.message.text)
     update.message.reply_text(
         'This is my recomendation: bla bla\n\n'
-        'Please, reate this recomendation:',
+        'Please, reate this recomendation within the 1-5 range:',
         reply_markup=ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], one_time_keyboard=True),
     )
     
