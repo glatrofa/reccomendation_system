@@ -36,7 +36,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-PIZZA, RECOMENDATION, EXPLANATION, RATING = range(4)
+SUGGESTION, EXPLANATION, COLLECTION = range(3)
 
 
 def start(update: Update, _: CallbackContext) -> int:
@@ -45,12 +45,13 @@ def start(update: Update, _: CallbackContext) -> int:
 
     update.message.reply_text(
         'Hi! I\'m a test bot.\n'
-        'Send /cancel to stop talking to me.\n\n'
+        'Send /cancel to stop talking to me.\n'
+        'Your chad id is: '+str(update.effective_chat.id)+'\n\n'
         'Please, choose a pizza from this list <link_here>:',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
     )
 
-    return RECOMENDATION
+    return SUGGESTION
 
 
 def pizza_suggestion(update: Update, _: CallbackContext):
@@ -72,13 +73,14 @@ def user_explanation(update: Update, _: CallbackContext):
         'Please, explain your rating:',
     )
     
-    return RATING
+    return COLLECTION
 
 
 def end_conversation(update: Update, _: CallbackContext):
-    logger.info("User rating explanation: %s", update.message.text)
+    logger.info("User rating explanation: %s, user chat id: %s", update.message.text, str(update.effective_chat.id))
     update.message.reply_text(
-        'Thank you!',
+        'Thank you!\n'
+        'Your data is registered.',
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -90,9 +92,26 @@ def cancel(update: Update, _: CallbackContext) -> int:
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
     update.message.reply_text(
-        'Conversation canceled.\n'
+        '✖ Conversation canceled.\n'
         'Please type /start to restart the conversation.',
         reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
+
+
+def echo(update: Update, _: CallbackContext):
+    update.message.reply_text(
+        '⚠ Warning: message not recorgnized!\n'
+        'To start the conversation, please type /start.',
+    )
+
+    return ConversationHandler.END
+
+
+def unknown(update: Update, _: CallbackContext):
+    update.message.reply_text(
+        '😮 Sorry, this command does not exist.\n',
     )
 
     return ConversationHandler.END
@@ -106,18 +125,24 @@ def main() -> None:
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
-    # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
+    # Add conversation handler with the states SUGGESTION, EXPLANATION and COLLECTION
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            RECOMENDATION: [MessageHandler(Filters.regex('^(Pizza 1|Pizza 2)$'), pizza_suggestion)],
+            SUGGESTION: [MessageHandler(Filters.regex('^(Pizza 1|Pizza 2)$'), pizza_suggestion)],
             EXPLANATION: [MessageHandler(Filters.regex('^(1|2|3|4|5)$'), user_explanation)],
-            RATING: [MessageHandler(Filters.text & ~Filters.command, end_conversation)],
+            COLLECTION: [MessageHandler(Filters.text & ~Filters.command, end_conversation)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
     )
 
     dispatcher.add_handler(conv_handler)
+
+    echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
+    dispatcher.add_handler(echo_handler)
+
+    unknown_handler = MessageHandler(Filters.command, unknown)
+    dispatcher.add_handler(unknown_handler)
 
     # Start the Bot
     updater.start_polling()
