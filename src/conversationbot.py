@@ -36,12 +36,16 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+DATA_PATH = 'data/data_recorded.csv'
 SUGGESTION, EXPLANATION, COLLECTION = range(3)
+collected_data = {}
 
 
 def start(update: Update, _: CallbackContext) -> int:
     """Starts the conversation and asks the user about their gender."""
     reply_keyboard = [['Pizza 1', 'Pizza 2']]
+    global collected_data
+    collected_data = {}
 
     update.message.reply_text(
         'Hi! I\'m a test bot.\n'
@@ -57,6 +61,9 @@ def start(update: Update, _: CallbackContext) -> int:
 def pizza_suggestion(update: Update, _: CallbackContext):
     user = update.message.from_user
     logger.info("User name: %s, user choise: %s", user.first_name, update.message.text)
+    global collected_data
+    collected_data.update({'user': user.first_name})
+    collected_data.update({'pizza_selected': update.message.text})
     update.message.reply_text(
         'This is my recomendation: bla bla\n\n'
         'Please, reate this recomendation within the 1-5 range:',
@@ -68,6 +75,8 @@ def pizza_suggestion(update: Update, _: CallbackContext):
 
 def user_explanation(update: Update, _: CallbackContext):
     logger.info("User rating: %s", update.message.text)
+    global collected_data
+    collected_data.update({'rating': update.message.text})
     update.message.reply_text(
         'Got it, thanks for reviewing me.\n\n'
         'Please, explain your rating:',
@@ -78,13 +87,30 @@ def user_explanation(update: Update, _: CallbackContext):
 
 def end_conversation(update: Update, _: CallbackContext):
     logger.info("User rating explanation: %s, user chat id: %s", update.message.text, str(update.effective_chat.id))
+    global collected_data
+    collected_data.update({'rating_explanation': update.message.text})
+    collected_data.update({'chad_id': update.effective_chat.id})
     update.message.reply_text(
         'Thank you!\n'
         'Your data is registered.',
         reply_markup=ReplyKeyboardRemove(),
     )
 
+    save_to_file()
+
     return ConversationHandler.END
+
+
+def save_to_file():
+    global collected_data
+    try:
+        with open(DATA_PATH, 'a') as file:
+            file_entry = ''
+            for s in collected_data.values():
+                file_entry = file_entry+str(s)+';'
+            file.write(file_entry+'\n')
+    except Exception as e:
+        logger.error('Unable to append on '+DATA_PATH+': '+str(e)+'.')
 
 
 def cancel(update: Update, _: CallbackContext) -> int:
