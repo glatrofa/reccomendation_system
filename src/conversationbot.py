@@ -1,8 +1,4 @@
-# https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py
-
-#!/usr/bin/env python
-# pylint: disable=C0116
-# This program is dedicated to the public domain under the CC0 license.
+# Program modified from https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py which is dedicated to the public domain under the CC0 license.
 
 """
 First, a few callback functions are defined. Then, those functions are passed to
@@ -36,13 +32,13 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-DATA_PATH = 'data/data_recorded.csv'
-SUGGESTION, EXPLANATION, COLLECTION = range(3)
-collected_data = {}
+DATA_PATH = 'data/data_recorded.csv' # path for storing user data
+SUGGESTION, EXPLANATION, COLLECTION = range(3) # states for main ConversationHandler
+collected_data = {} # global dictionary for storing user data to file
 
 
 def start(update: Update, _: CallbackContext) -> int:
-    """Starts the conversation and asks the user about their gender."""
+    """Starts the conversation and asks the user about their favourite pizza."""
     reply_keyboard = [['Pizza 1', 'Pizza 2']]
     global collected_data
     collected_data = {}
@@ -59,6 +55,7 @@ def start(update: Update, _: CallbackContext) -> int:
 
 
 def pizza_suggestion(update: Update, _: CallbackContext):
+    """Review the users' pizza and asks for a rating."""
     user = update.message.from_user
     logger.info("User name: %s, user choise: %s", user.first_name, update.message.text)
     global collected_data
@@ -74,6 +71,7 @@ def pizza_suggestion(update: Update, _: CallbackContext):
 
 
 def user_explanation(update: Update, _: CallbackContext):
+    """Gets the user rating and an explanation for it."""
     logger.info("User rating: %s", update.message.text)
     global collected_data
     collected_data.update({'rating': update.message.text})
@@ -86,6 +84,7 @@ def user_explanation(update: Update, _: CallbackContext):
 
 
 def end_conversation(update: Update, _: CallbackContext):
+    """Saves data to file and thanks the user."""
     logger.info("User rating explanation: %s, user chat id: %s", update.message.text, str(update.effective_chat.id))
     global collected_data
     collected_data.update({'rating_explanation': update.message.text})
@@ -102,6 +101,7 @@ def end_conversation(update: Update, _: CallbackContext):
 
 
 def save_to_file():
+    """Saves values in collected_data in the DATA_PATH file."""
     global collected_data
     try:
         with open(DATA_PATH, 'a') as file:
@@ -127,8 +127,9 @@ def cancel(update: Update, _: CallbackContext) -> int:
 
 
 def echo(update: Update, _: CallbackContext):
+    """Every words typed by the user outside the main conversation flow is tagged as not recognized."""
     update.message.reply_text(
-        '⚠ Warning: message not recorgnized!\n'
+        '⚠ Warning: message not recognized!\n'
         'To start the conversation, please type /start.',
     )
 
@@ -136,6 +137,7 @@ def echo(update: Update, _: CallbackContext):
 
 
 def unknown(update: Update, _: CallbackContext):
+    """Notify to the user that the command typed does not exist."""
     update.message.reply_text(
         '😮 Sorry, this command does not exist.\n',
     )
