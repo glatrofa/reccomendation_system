@@ -1,18 +1,14 @@
-# Program modified from https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py which is dedicated to the public domain under the CC0 license.
-
 """
-First, a few callback functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
+Forked from rogram modified from https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py which is dedicated to the public domain under the CC0 license.
+
+The bot is started and runs until we press Ctrl-C on the command line.
 
 Usage:
-Example of a bot-user conversation using ConversationHandler.
 Send /start to initiate the conversation.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
+Press Ctrl-C on the command line or send a signal to the process to stop the bot.
 """
 
-import logging
+import logging, os
 from api.telegram_bot import TOKEN
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
@@ -103,6 +99,11 @@ def end_conversation(update: Update, _: CallbackContext):
 def save_to_file():
     """Saves values in collected_data in the DATA_PATH file."""
     global collected_data
+    if not os.path.isfile(DATA_PATH):
+        with open(DATA_PATH, 'w') as file:
+            file.write('user;pizza_selected;rating;rating_explanation;chad_id;\n')
+            logger.info('File created on '+DATA_PATH)
+    
     try:
         with open(DATA_PATH, 'a') as file:
             file_entry = ''
