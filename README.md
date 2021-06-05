@@ -10,7 +10,7 @@ A list of pizzas is available [here](https://github.com/glatrofa/reccomendation_
 ## Requirements
 
 - Python 3.7.4
-- File containing the [Telegram API token](https://core.telegram.org/bots/api) placed in `src/api/telegram_not.py`
+- File containing the [Telegram API token](https://core.telegram.org/bots/api) placed in `src/api/telegram_bot.py`
 
 ## Usage
 
