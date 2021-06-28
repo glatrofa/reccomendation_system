@@ -9,9 +9,10 @@ Press Ctrl-C on the command line or send a signal to the process to stop the bot
 """
 
 import logging, os
-from api.telegram_bot import TOKEN
-
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+import pandas as pd
+from api.telegram import KEY as TELEGRAM_KEY
+from api.tmdb import KEY as TMDB_KEY
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, ChatAction
 from telegram.ext import (
     Updater,
     CommandHandler,
