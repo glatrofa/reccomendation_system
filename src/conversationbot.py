@@ -47,6 +47,29 @@ def start(update: Update, _: CallbackContext) -> int:
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
     )
 
+    return ASK
+
+def send_typing_action(func):
+    """Sends typing action while processing func command."""
+
+    @wraps(func)
+    def command_func(update, context, *args, **kwargs):
+        context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.TYPING)
+        return func(update, context,  *args, **kwargs)
+
+    return command_func
+
+from functools import wraps
+@send_typing_action
+def ask(update: Update, context: CallbackContext):
+    """Print the lists movies link and take the user input."""
+    # update.message.reply_text(
+    #     'Please, choose a movie from this list <link_here>:'
+    # )
+    
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://image.tmdb.org/t/p/w400/8peYuPeLawgCFhuI4IcDjdrAAXw.jpg')
+
+
     return SUGGESTION
 
 
