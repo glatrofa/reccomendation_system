@@ -10,9 +10,11 @@ Press Ctrl-C on the command line or send a signal to the process to stop the bot
 
 import logging, os
 import pandas as pd
+from functools import wraps # to enable 'typing' label
 from api.telegram import KEY as TELEGRAM_KEY
 from api.tmdb import KEY as TMDB_KEY
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, ChatAction
+import telegram
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -21,34 +23,34 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+from tmdbv3api import TMDb
+from tmdbv3api import Movie
 
-# Enable logging
+# enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 
 logger = logging.getLogger(__name__)
 
+# tmdb config
+tmdb = TMDb()
+tmdb.api_key = TMDB_KEY
+tmdb.language = 'en'
+# tmdb.debug = True
+imdb_movie = Movie()
+
+MOVIES_PATH = 'data/movies/movies.csv' # path to movies information
+MOVIES_SIM_PATH = 'data/movie/movies_similarity.csv' # path to movies similarities couples
 DATA_PATH = 'data/data_recorded.csv' # path for storing user data
-SUGGESTION, EXPLANATION, COLLECTION = range(3) # states for main ConversationHandler
+TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w200'
+ASK, CHECK_MOVIE, SUGGESTION, EXPLANATION, COLLECTION = range(5) # states for main ConversationHandler
+
 collected_data = {} # global dictionary for storing user data to file
+movies_data = ''
+movies_sim_data = ''
+movies_data_lower = ''
 
-
-def start(update: Update, _: CallbackContext) -> int:
-    """Starts the conversation and asks the user about their favourite pizza."""
-    reply_keyboard = [['Pizza 1', 'Pizza 2']]
-    global collected_data
-    collected_data = {}
-
-    update.message.reply_text(
-        'Hi! I\'m a test bot.\n'
-        'Send /cancel to stop talking to me.\n'
-        'Your chad id is: '+str(update.effective_chat.id)+'\n\n'
-        'Please, choose a pizza from this list <link_here>:',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
-    )
-
-    return ASK
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
@@ -60,34 +62,97 @@ def send_typing_action(func):
 
     return command_func
 
-from functools import wraps
+
+@send_typing_action
+def start(update: Update, context: CallbackContext) -> int:
+    """Start the conversation and print a welcome message."""
+    logger.info("%s - user %s initiated the chat", update.effective_chat.id, update.message.from_user.first_name)
+    global collected_data
+    collected_data = {}
+    collected_data.update({'user': update.message.from_user.first_name})
+    collected_data.update({'chat_id': update.effective_chat.id})
+
+    update.message.reply_text(
+        'Hi! I\'m a test bot.\n'
+        'Send /cancel to stop talking to me.\n'
+        'Your chat id is: '+str(update.effective_chat.id)
+    )
+
+    return ask(update, context)
+
+
 @send_typing_action
 def ask(update: Update, context: CallbackContext):
-    """Print the lists movies link and take the user input."""
-    # update.message.reply_text(
-    #     'Please, choose a movie from this list <link_here>:'
-    # )
-    
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://image.tmdb.org/t/p/w400/8peYuPeLawgCFhuI4IcDjdrAAXw.jpg')
-
-
-    return SUGGESTION
-
-
-def pizza_suggestion(update: Update, _: CallbackContext):
-    """Review the users' pizza and asks for a rating."""
-    user = update.message.from_user
-    logger.info("User name: %s, user choise: %s", user.first_name, update.message.text)
-    global collected_data
-    collected_data.update({'user': user.first_name})
-    collected_data.update({'pizza_selected': update.message.text})
+    """Send movies list link and take the user input."""
     update.message.reply_text(
-        'This is my recomendation: bla bla\n\n'
-        'Please, reate this recomendation within the 1-5 range:',
-        reply_markup=ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], one_time_keyboard=True),
+        'Please, choose a movie from this list <link_here>:'
     )
     
-    return EXPLANATION
+    # context.bot.send_photo(chat_id=update.effective_chat.id, photo='https://image.tmdb.org/t/p/w400/8peYuPeLawgCFhuI4IcDjdrAAXw.jpg')
+
+    return CHECK_MOVIE
+
+
+def get_movie(movie_name):
+    """Query offline db for movie information."""
+    movie_name = movie_name.lower()
+    global movies_data_lower
+    result = movies_data_lower[movies_data_lower['title'].str.contains(movie_name)]
+    # result.index.name = None
+    # print((result['title']).to_string(index=False))
+
+    # add column with link url
+
+    return result.head(1)
+
+
+@send_typing_action
+def check_movie(update: Update, context: CallbackContext):
+    """Confirm to user his movie selected with a movie poster pic."""
+    context.bot.sendMessage(chat_id=update.effective_chat.id, text='Select the movie:')
+    movie = get_movie(update.message.text.lower())
+    
+    context.bot.send_message(
+        chat_id = update.effective_chat.id, 
+        text = 'You have selected' + movie['title'].to_string(index=False) + ' (' + movie['year'].to_string(index=False)[1:] + ')' # there is a space before the year number
+    )
+
+    global imdb_movie
+    tmdb_id = movie['tmdbId'].to_string(index=False)[1:]
+
+    context.bot.send_photo(
+        chat_id = update.effective_chat.id,
+        photo = TMDB_IMAGE_URL +
+                imdb_movie.details(tmdb_id).poster_path
+    )
+
+    global collected_data
+    # collected_data.update({'movie_id': input_movie})
+    movie_id = movie['movieId'].to_string(index=False)[1:]
+    collected_data.update({'movie_id': movie_id}) # TODO: to convert in parameter function?
+    logger.info("%s - user movie (id): %s", update.effective_chat.id, movie_id)
+
+    return suggestion(update, context, movie_id)
+
+# TODO:
+def get_reccomended_movies(movie_id):
+
+
+@send_typing_action
+def suggestion(update: Update, context: CallbackContext, movie_id):
+    """Compute the movie recommendation and provide an explanation."""
+    # user = update.message.from_user
+    # input_movie = update.message.text
+    print(movie_id)
+    # TODO:
+    movie_list = get_reccomended_movies(movie_id)
+    # update.message.reply_text(
+    #     f'This is my recomendation: {movie.title.to_string(index=False)}\n\n',
+    #     # 'Please, reate this recomendation within the 1-5 range:',
+    #     reply_markup=ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], one_time_keyboard=True),
+    # )
+    
+    # return EXPLANATION
 
 
 def user_explanation(update: Update, _: CallbackContext):
@@ -172,17 +237,23 @@ def unknown(update: Update, _: CallbackContext):
 
 def main() -> None:
     """Run the bot."""
-    # Create the Updater and pass it your bot's token.
-    updater = Updater(TOKEN)
+    # load movies datasets
+    global movies_data, movies_sim_data, movies_data_lower
+    # movies_data = pd.read_csv(MOVIES_PATH)
+    # movies_sim_data = pd.read_csv(MOVIES_SIM_PATH)
+    movies_data_lower = pd.read_csv(MOVIES_PATH)
+    movies_data_lower['title'] = movies_data_lower['title'].str.lower()
 
-    # Get the dispatcher to register handlers
-    dispatcher = updater.dispatcher
+    updater = Updater(TELEGRAM_KEY) # create the Updater and pass it your bot's key.
+    dispatcher = updater.dispatcher # get the dispatcher to register handlers
 
-    # Add conversation handler with the states SUGGESTION, EXPLANATION and COLLECTION
+    # add conversation handler with the states SUGGESTION, EXPLANATION and COLLECTION
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            SUGGESTION: [MessageHandler(Filters.regex('^(Pizza 1|Pizza 2)$'), pizza_suggestion)],
+            ASK: [MessageHandler(Filters.text & ~Filters.command, ask)],
+            CHECK_MOVIE: [MessageHandler(Filters.text & ~Filters.command, check_movie)],
+            SUGGESTION: [MessageHandler(Filters.text & ~Filters.command, suggestion)],
             EXPLANATION: [MessageHandler(Filters.regex('^(1|2|3|4|5)$'), user_explanation)],
             COLLECTION: [MessageHandler(Filters.text & ~Filters.command, end_conversation)],
         },
@@ -197,10 +268,10 @@ def main() -> None:
     unknown_handler = MessageHandler(Filters.command, unknown)
     dispatcher.add_handler(unknown_handler)
 
-    # Start the Bot
+    # start the Bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
