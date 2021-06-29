@@ -1,2 +1,5 @@
 src/api/
-data/data_recorded.csv
+data
+venv
+install-guide.txt
+*.ipynb
