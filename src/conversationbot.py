@@ -41,7 +41,7 @@ tmdb.language = 'en'
 imdb_movie = Movie()
 
 MOVIES_PATH = 'data/movies/movies.csv' # path to movies information
-MOVIES_SIM_PATH = 'data/movie/movies_similarity.csv' # path to movies similarities couples
+MOVIES_SIM_PATH = 'data/movies/movies_similarity.csv' # path to movies similarities couples
 DATA_PATH = 'data/data_recorded.csv' # path for storing user data
 TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w200'
 ASK, CHECK_MOVIE, SUGGESTION, EXPLANATION, COLLECTION = range(5) # states for main ConversationHandler
@@ -93,8 +93,8 @@ def ask(update: Update, context: CallbackContext):
     return CHECK_MOVIE
 
 
-def get_movie(movie_name):
-    """Query offline db for movie information."""
+def get_movie_from_name(movie_name: str):
+    """Query offline db for movie information by movie name."""
     movie_name = movie_name.lower()
     global movies_data_lower
     result = movies_data_lower[movies_data_lower['title'].str.contains(movie_name)]
@@ -106,11 +106,19 @@ def get_movie(movie_name):
     return result.head(1)
 
 
+def get_movie_from_id(movie_id: int):
+    """Query offline db for movie information by movie id."""
+    global movies_data_lower
+    result = movies_data_lower[movies_data_lower['movieId'] == movie_id]
+
+    return result.values.tolist()
+
+
 @send_typing_action
 def check_movie(update: Update, context: CallbackContext):
     """Confirm to user his movie selected with a movie poster pic."""
     context.bot.sendMessage(chat_id=update.effective_chat.id, text='Select the movie:')
-    movie = get_movie(update.message.text.lower())
+    movie = get_movie_from_name(update.message.text.lower())
     
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
@@ -134,25 +142,44 @@ def check_movie(update: Update, context: CallbackContext):
 
     return suggestion(update, context, movie_id)
 
-# TODO:
+
 def get_reccomended_movies(movie_id):
+    # movie_id = int(movie_id)
+    global movies_sim_data
+    reccomendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
+    # TODO: fix column index to sim_movieId
+    reccomendations_list = reccomendations_df['sim_moveId'].values.tolist()
+    del reccomendations_df
+    
+    return reccomendations_list
 
 
 @send_typing_action
 def suggestion(update: Update, context: CallbackContext, movie_id):
-    """Compute the movie recommendation and provide an explanation."""
-    # user = update.message.from_user
-    # input_movie = update.message.text
-    print(movie_id)
-    # TODO:
-    movie_list = get_reccomended_movies(movie_id)
-    # update.message.reply_text(
-    #     f'This is my recomendation: {movie.title.to_string(index=False)}\n\n',
-    #     # 'Please, reate this recomendation within the 1-5 range:',
-    #     reply_markup=ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], one_time_keyboard=True),
-    # )
+    """Compute movie recommendation."""
+    # TODO: save to file ids of movie recommended
     
-    # return EXPLANATION
+    movie_list = get_reccomended_movies(movie_id)
+    context.bot.send_message(
+        chat_id = update.effective_chat.id, 
+        text = 'Here there is the reccomendation:'
+    )
+
+    for movie_id in movie_list:
+        movie = get_movie_from_id(int(movie_id))
+        print(movie)
+        context.bot.send_photo(
+            chat_id = update.effective_chat.id,
+            photo = TMDB_IMAGE_URL +
+                    imdb_movie.details(movie[0][4]).poster_path,
+            caption = movie[0][1].capitalize() + '\nhttps://www.themoviedb.org/movie/' + str(movie[0][4])
+        )
+    # TODO: return genres list
+    return explanation
+
+
+def explanation(update: Update, context: CallbackContext, genres: list):
+    # TODO: send explanation with genre list
 
 
 def user_explanation(update: Update, _: CallbackContext):
@@ -240,7 +267,7 @@ def main() -> None:
     # load movies datasets
     global movies_data, movies_sim_data, movies_data_lower
     # movies_data = pd.read_csv(MOVIES_PATH)
-    # movies_sim_data = pd.read_csv(MOVIES_SIM_PATH)
+    movies_sim_data = pd.read_csv(MOVIES_SIM_PATH)
     movies_data_lower = pd.read_csv(MOVIES_PATH)
     movies_data_lower['title'] = movies_data_lower['title'].str.lower()
 
