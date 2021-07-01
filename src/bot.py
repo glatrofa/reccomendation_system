@@ -1,10 +1,11 @@
 """
-Forked from rogram modified from https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py which is dedicated to the public domain under the CC0 license.
+Forked from https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py which is dedicated to the public domain under the CC0 license.
 
 The bot is started and runs until we press Ctrl-C on the command line.
 
 Usage:
 Send /start to initiate the conversation.
+Send /cancel to end the conversation.
 Press Ctrl-C on the command line or send a signal to the process to stop the bot.
 """
 
@@ -44,6 +45,7 @@ MOVIES_PATH = 'data/movies/movies.csv' # path to movies information
 MOVIES_SIM_PATH = 'data/movies/movies_similarity.csv' # path to movies similarities couples
 DATA_PATH = 'data/data_recorded.csv' # path for storing user data
 TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w200'
+MOVIE_URL = 'https://www.themoviedb.org/movie/'
 ASK, CHECK_MOVIE, SUGGESTION, EXPLANATION, COLLECTION = range(5) # states for main ConversationHandler
 
 collected_data = {} # global dictionary for storing user data to file
@@ -100,9 +102,6 @@ def get_movie_from_name(movie_name: str):
     result = movies_data_lower[movies_data_lower['title'].str.contains(movie_name)]
     # result.index.name = None
     # print((result['title']).to_string(index=False))
-
-    # add column with link url
-
     return result.head(1)
 
 
@@ -138,6 +137,7 @@ def check_movie(update: Update, context: CallbackContext):
     # collected_data.update({'movie_id': input_movie})
     movie_id = movie['movieId'].to_string(index=False)[1:]
     collected_data.update({'movie_id': movie_id}) # TODO: to convert in parameter function?
+    collected_data.update({'movie_genres': movie['genres'].to_string(index=False).split('|')}) # get genres list
     logger.info("%s - user movie (id): %s", update.effective_chat.id, movie_id)
 
     return suggestion(update, context, movie_id)
@@ -147,7 +147,7 @@ def get_reccomended_movies(movie_id):
     # movie_id = int(movie_id)
     global movies_sim_data
     reccomendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
-    # TODO: fix column index to sim_movieId
+    # TODO: fix column index name to sim_movieId
     reccomendations_list = reccomendations_df['sim_moveId'].values.tolist()
     del reccomendations_df
     
@@ -165,22 +165,38 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
         text = 'Here there is the reccomendation:'
     )
 
+    genres_list = []
+
     for movie_id in movie_list:
         movie = get_movie_from_id(int(movie_id))
+        genres_list.append(movie[0][5]) # save genres for explanation
         print(movie)
         context.bot.send_photo(
             chat_id = update.effective_chat.id,
             photo = TMDB_IMAGE_URL +
                     imdb_movie.details(movie[0][4]).poster_path,
-                    # TODO: make link url as a constant string
-            caption = movie[0][1].capitalize() + '\nhttps://www.themoviedb.org/movie/' + str(movie[0][4])
+            caption = movie[0][1].capitalize() + '\n' + MOVIE_URL + str(movie[0][4])
         )
-    # TODO: return genres list
-    return explanation
+
+    return explanation(update, context, genres_list)
 
 
-def explanation(update: Update, context: CallbackContext, genres: list):
-    # TODO: send explanation with genre list
+def explanation(update: Update, context: CallbackContext, genres_list: list):
+    list = []
+    global collected_data
+    collected_data['movie_genres']
+
+    for element in genres_list:
+        element = element.split('|')
+        for genre in element:
+            if genre in collected_data['movie_genres']:
+                if genre not in list:
+                    list.append(genre)
+    print(list)
+    
+    update.message.reply_text(
+        'These movies are reccomended because these genres is in common with your movie:\n' + ' '.join(list)
+    )
 
 
 def user_explanation(update: Update, _: CallbackContext):
