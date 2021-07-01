@@ -48,6 +48,8 @@ TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w200'
 MOVIE_URL = 'https://www.themoviedb.org/movie/'
 ASK, CHECK_MOVIE, SUGGESTION, EXPLANATION, COLLECTION = range(5) # states for main ConversationHandler
 
+REVIEW_VALUES = ['1', '2', '3', '4', '5']
+
 collected_data = {} # global dictionary for storing user data to file
 movies_data = ''
 movies_sim_data = ''
@@ -193,10 +195,43 @@ def explanation(update: Update, context: CallbackContext, genres_list: list):
                 if genre not in list:
                     list.append(genre)
     print(list)
-    
+
     update.message.reply_text(
         'These movies are reccomended because these genres is in common with your movie:\n' + ' '.join(list)
     )
+
+    return get_user_relevance(update, context)
+
+
+def get_user_relevance(update: Update, context: CallbackContext):
+    """Ask to the user his movie relevance."""
+
+    question = (
+        'Are these movies relevant for you?\n',
+        'Please select a value from 1 to 5.'
+    )
+
+    update.message.reply_text(
+        ''.join(question),
+        reply_markup=ReplyKeyboardMarkup([REVIEW_VALUES], one_time_keyboard=True)
+    )
+
+    return end_conversation
+    # message = Bot.sendPoll(
+    #     self = Bot,
+    #     chat_id = update.effective_chat.id,
+    #     question = 'bla bla',
+    #     options = REVIEW_VALUES
+    # )
+
+#     button_list = [
+#     InlineKeyboardButton("col1", callback_data=...),
+#     InlineKeyboardButton("col2", callback_data=...),
+#     InlineKeyboardButton("row 2", callback_data=...)
+# ]
+# reply_markup = InlineKeyboardMarkup(util.build_menu(button_list, n_cols=2))
+# bot.send_message(..., "A two-column menu", reply_markup=reply_markup)
+
 
 
 def user_explanation(update: Update, _: CallbackContext):
