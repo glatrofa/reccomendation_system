@@ -172,6 +172,7 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
             chat_id = update.effective_chat.id,
             photo = TMDB_IMAGE_URL +
                     imdb_movie.details(movie[0][4]).poster_path,
+                    # TODO: make link url as a constant string
             caption = movie[0][1].capitalize() + '\nhttps://www.themoviedb.org/movie/' + str(movie[0][4])
         )
     # TODO: return genres list
