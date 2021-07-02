@@ -123,11 +123,11 @@ def check_movie(update: Update, context: CallbackContext):
     
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
-        text = 'You have selected' + movie['title'].to_string(index=False) + ' (' + movie['year'].to_string(index=False)[1:] + ')' # there is a space before the year number
+        text = 'You have selected ' + movie['title'].to_string(index=False) + ' (' + movie['year'].to_string(index=False) + ')' # there is a space before the year number
     )
 
     global imdb_movie
-    tmdb_id = movie['tmdbId'].to_string(index=False)[1:]
+    tmdb_id = movie['tmdbId'].to_string(index=False)
 
     context.bot.send_photo(
         chat_id = update.effective_chat.id,
@@ -137,7 +137,7 @@ def check_movie(update: Update, context: CallbackContext):
 
     global collected_data
     # collected_data.update({'movie_id': input_movie})
-    movie_id = movie['movieId'].to_string(index=False)[1:]
+    movie_id = movie['movieId'].to_string(index=False)
     collected_data.update({'movie_id': movie_id}) # TODO: to convert in parameter function?
     collected_data.update({'movie_genres': movie['genres'].to_string(index=False).split('|')}) # get genres list
     logger.info("%s - user movie (id): %s", update.effective_chat.id, movie_id)
