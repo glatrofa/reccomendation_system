@@ -197,7 +197,7 @@ def explanation(update: Update, context: CallbackContext, genres_list: list):
     print(list)
 
     update.message.reply_text(
-        'These movies are reccomended because these genres is in common with your movie:\n' + ' '.join(list)
+        'These movies are reccomended because these genres are in common with your movie:\n' + ' '.join(list)
     )
 
     return get_user_relevance(update, context)
@@ -216,7 +216,7 @@ def get_user_relevance(update: Update, context: CallbackContext):
         reply_markup=ReplyKeyboardMarkup([REVIEW_VALUES], one_time_keyboard=True)
     )
 
-    return end_conversation
+    return COLLECTION
     # message = Bot.sendPoll(
     #     self = Bot,
     #     chat_id = update.effective_chat.id,
@@ -249,10 +249,10 @@ def user_explanation(update: Update, _: CallbackContext):
 
 def end_conversation(update: Update, _: CallbackContext):
     """Saves data to file and thanks the user."""
-    logger.info("User rating explanation: %s, user chat id: %s", update.message.text, str(update.effective_chat.id))
-    global collected_data
-    collected_data.update({'rating_explanation': update.message.text})
-    collected_data.update({'chad_id': update.effective_chat.id})
+    # logger.info("User rating explanation: %s, user chat id: %s", update.message.text, str(update.effective_chat.id))
+    # global collected_data
+    # collected_data.update({'rating_explanation': update.message.text})
+    # collected_data.update({'chad_id': update.effective_chat.id})
     update.message.reply_text(
         'Thank you!\n'
         'Your data is registered.',
