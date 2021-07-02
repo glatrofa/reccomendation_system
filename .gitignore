@@ -3,3 +3,5 @@ data
 venv
 install-guide.txt
 *.ipynb
+windows-venv
+.vscode
