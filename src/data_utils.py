@@ -23,10 +23,11 @@ def get_movie_from_name(movie_name: str):
     # print((result['title']).to_string(index=False))
     return result.head(1)
 
-def get_movie_from_id(movie_id: int):
+
+def get_movie_from_id(movie_id):
     """Query offline db for movie information by movie id."""
     global mov_df
-    result = mov_df[mov_df['movieId'] == movie_id]
+    result = mov_df[mov_df['movieId'] == int(movie_id)]
 
     return result.values.tolist()
 

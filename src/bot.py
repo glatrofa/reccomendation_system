@@ -142,7 +142,7 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
     genres_list = []
 
     for movie_id in movie_list:
-        movie = data_utils.get_movie_from_id(int(movie_id))
+        movie = data_utils.get_movie_from_id(movie_id)
         genres_list.append(movie[0][5]) # save genres for explanation
         print(movie)
         context.bot.send_photo(
