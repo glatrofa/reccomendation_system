@@ -5,3 +5,4 @@ install-guide.txt
 *.ipynb
 win-venv
 .vscode
+src/__pycache__
