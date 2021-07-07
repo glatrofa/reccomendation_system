@@ -4,36 +4,36 @@ MOVIES_PATH = '../movie_recommendation/data/output/movies.csv' # path to movies 
 MOVIES_SIM_PATH = '../movie_recommendation/data/output/movies_similarity.csv' # path to movies similarities couples
 DATA_PATH = 'data/data_recorded.csv' # path for storing user data
 
-movies_data = ''
-movies_sim_data = ''
-movies_data_lower = ''
+mov_df = ''
+mov_sim_df = ''
 
 def load_data():
-    global movies_data, movies_sim_data, movies_data_lower
-    movies_sim_data = pd.read_csv(MOVIES_SIM_PATH)
-    movies_data_lower = pd.read_csv(MOVIES_PATH)
-    movies_data_lower['title'] = movies_data_lower['title'].str.lower()
+    global mov_df, mov_sim_df,
+    mov_sim_df = pd.read_csv(MOVIES_SIM_PATH)
+    # mov_sim_df = mov_sim_df.set_index('movieId')
+    mov_df = pd.read_csv(MOVIES_PATH)
+    # mov_df = mov_df.set_index('movieId')
 
 def get_movie_from_name(movie_name: str):
     """Query offline db for movie information by movie name."""
-    movie_name = movie_name.lower()
-    global movies_data_lower
-    result = movies_data_lower[movies_data_lower['title'].str.contains(movie_name)]
+    global mov_df
+    movie = mov_df[mov_df['title'].str.contains(movie_name, case=False)].iloc[0, :]
+    result = mov_df[mov_df['movieId'] == movie['movieId']]
     # result.index.name = None
     # print((result['title']).to_string(index=False))
     return result.head(1)
 
 def get_movie_from_id(movie_id: int):
     """Query offline db for movie information by movie id."""
-    global movies_data_lower
-    result = movies_data_lower[movies_data_lower['movieId'] == movie_id]
+    global mov_df
+    result = mov_df[mov_df['movieId'] == movie_id]
 
     return result.values.tolist()
 
 def get_reccomended_movies(movie_id):
     # movie_id = int(movie_id)
-    global movies_sim_data
-    recommendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
+    global mov_sim_df
+    recommendations_df = mov_sim_df[mov_sim_df['movieId'] == int(movie_id)]
     reccomendations_list = recommendations_df['sim_movieId'].values.tolist()
     del recommendations_df
     

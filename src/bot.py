@@ -99,7 +99,7 @@ def ask(update: Update, context: CallbackContext):
 def check_movie(update: Update, context: CallbackContext):
     """Confirm to user his movie selected with a movie poster pic."""
     context.bot.sendMessage(chat_id=update.effective_chat.id, text='Select the movie:')
-    movie = data_utils.get_movie_from_name(update.message.text.lower())
+    movie = data_utils.get_movie_from_name(update.message.text)
     
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
@@ -156,20 +156,19 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
 
 
 def explanation(update: Update, context: CallbackContext, genres_list: list):
-    list = []
+    genre_list = []
     global collected_data
     collected_data['movie_genres']
 
     for element in genres_list:
         element = element.split('|')
         for genre in element:
-            if genre in collected_data['movie_genres']:
-                if genre not in list:
-                    list.append(genre)
-    print(list)
+            if (genre in collected_data['movie_genres']) and (genre not in genre_list):
+                genre_list.append(genre)
+    print(genre_list)
 
     update.message.reply_text(
-        'These movies are reccomended because these genres are in common with your movie:\n' + ' '.join(list)
+        'These movies are reccomended because these genres are in common with your movie:\n' + ' '.join(genre_list)
     )
 
     return get_user_relevance(update, context)
