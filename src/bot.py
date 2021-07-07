@@ -148,9 +148,9 @@ def check_movie(update: Update, context: CallbackContext):
 def get_reccomended_movies(movie_id):
     # movie_id = int(movie_id)
     global movies_sim_data
-    reccomendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
-    reccomendations_list = reccomendations_df['sim_movieId'].values.tolist()
-    del reccomendations_df
+    recommendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
+    reccomendations_list = recommendations_df['sim_movieId'].values.tolist()
+    del recommendations_df
     
     return reccomendations_list
 
