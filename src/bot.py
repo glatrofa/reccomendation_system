@@ -9,13 +9,12 @@ Send /cancel to end the conversation.
 Press Ctrl-C on the command line or send a signal to the process to stop the bot.
 """
 
-import logging, os
+import logging, os, data_utils, telegram
 import pandas as pd
 from functools import wraps # to enable 'typing' label
 from api.telegram import KEY as TELEGRAM_KEY
 from api.tmdb import KEY as TMDB_KEY
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, ChatAction
-import telegram
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -41,9 +40,6 @@ tmdb.language = 'en'
 # tmdb.debug = True
 imdb_movie = Movie()
 
-MOVIES_PATH = '../movie_recommendation/data/output/movies.csv' # path to movies information
-MOVIES_SIM_PATH = '../movie_recommendation/data/output/movies_similarity.csv' # path to movies similarities couples
-DATA_PATH = 'data/data_recorded.csv' # path for storing user data
 TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w200'
 MOVIE_URL = 'https://www.themoviedb.org/movie/'
 ASK, CHECK_MOVIE, SUGGESTION, EXPLANATION, COLLECTION = range(5) # states for main ConversationHandler
@@ -51,10 +47,6 @@ ASK, CHECK_MOVIE, SUGGESTION, EXPLANATION, COLLECTION = range(5) # states for ma
 REVIEW_VALUES = ['1', '2', '3', '4', '5']
 
 collected_data = {} # global dictionary for storing user data to file
-movies_data = ''
-movies_sim_data = ''
-movies_data_lower = ''
-
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
@@ -97,29 +89,17 @@ def ask(update: Update, context: CallbackContext):
     return CHECK_MOVIE
 
 
-def get_movie_from_name(movie_name: str):
-    """Query offline db for movie information by movie name."""
-    movie_name = movie_name.lower()
-    global movies_data_lower
-    result = movies_data_lower[movies_data_lower['title'].str.contains(movie_name)]
-    # result.index.name = None
-    # print((result['title']).to_string(index=False))
-    return result.head(1)
 
 
-def get_movie_from_id(movie_id: int):
-    """Query offline db for movie information by movie id."""
-    global movies_data_lower
-    result = movies_data_lower[movies_data_lower['movieId'] == movie_id]
 
-    return result.values.tolist()
+
 
 
 @send_typing_action
 def check_movie(update: Update, context: CallbackContext):
     """Confirm to user his movie selected with a movie poster pic."""
     context.bot.sendMessage(chat_id=update.effective_chat.id, text='Select the movie:')
-    movie = get_movie_from_name(update.message.text.lower())
+    movie = data_utils.get_movie_from_name(update.message.text.lower())
     
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
@@ -145,14 +125,7 @@ def check_movie(update: Update, context: CallbackContext):
     return suggestion(update, context, movie_id)
 
 
-def get_reccomended_movies(movie_id):
-    # movie_id = int(movie_id)
-    global movies_sim_data
-    recommendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
-    reccomendations_list = recommendations_df['sim_movieId'].values.tolist()
-    del recommendations_df
-    
-    return reccomendations_list
+
 
 
 @send_typing_action
@@ -160,7 +133,7 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
     """Compute movie recommendation."""
     # TODO: save to file ids of movie recommended
     
-    movie_list = get_reccomended_movies(movie_id)
+    movie_list = data_utils.get_reccomended_movies(movie_id)
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
         text = 'Here there is the reccomendation:'
@@ -169,7 +142,7 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
     genres_list = []
 
     for movie_id in movie_list:
-        movie = get_movie_from_id(int(movie_id))
+        movie = data_utils.get_movie_from_id(int(movie_id))
         genres_list.append(movie[0][5]) # save genres for explanation
         print(movie)
         context.bot.send_photo(
@@ -266,19 +239,19 @@ def end_conversation(update: Update, _: CallbackContext):
 def save_to_file():
     """Saves values in collected_data in the DATA_PATH file."""
     global collected_data
-    if not os.path.isfile(DATA_PATH):
-        with open(DATA_PATH, 'w') as file:
+    if not os.path.isfile(data_utils.DATA_PATH):
+        with open(data_utils.DATA_PATH, 'w') as file:
             file.write('user;pizza_selected;rating;rating_explanation;chad_id;\n')
-            logger.info('File created on '+DATA_PATH)
+            logger.info('File created on '+data_utils.DATA_PATH)
     
     try:
-        with open(DATA_PATH, 'a') as file:
+        with open(data_utils.DATA_PATH, 'a') as file:
             file_entry = ''
             for s in collected_data.values():
                 file_entry = file_entry+str(s)+';'
             file.write(file_entry+'\n')
     except Exception as e:
-        logger.error('Unable to append on '+DATA_PATH+': '+str(e)+'.')
+        logger.error('Unable to append on '+data_utils.DATA_PATH+': '+str(e)+'.')
 
 
 def cancel(update: Update, _: CallbackContext) -> int:
@@ -316,11 +289,9 @@ def unknown(update: Update, _: CallbackContext):
 def main() -> None:
     """Run the bot."""
     # load movies datasets
-    global movies_data, movies_sim_data, movies_data_lower
+    # global movies_data, movies_sim_data, movies_data_lower
     # movies_data = pd.read_csv(MOVIES_PATH)
-    movies_sim_data = pd.read_csv(MOVIES_SIM_PATH)
-    movies_data_lower = pd.read_csv(MOVIES_PATH)
-    movies_data_lower['title'] = movies_data_lower['title'].str.lower()
+    data_utils.load_data()
 
     updater = Updater(TELEGRAM_KEY) # create the Updater and pass it your bot's key.
     dispatcher = updater.dispatcher # get the dispatcher to register handlers
