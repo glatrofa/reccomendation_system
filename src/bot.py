@@ -41,8 +41,8 @@ tmdb.language = 'en'
 # tmdb.debug = True
 imdb_movie = Movie()
 
-MOVIES_PATH = 'data/movies/movies.csv' # path to movies information
-MOVIES_SIM_PATH = 'data/movies/movies_similarity.csv' # path to movies similarities couples
+MOVIES_PATH = '../movie_recommendation/data/output/movies.csv' # path to movies information
+MOVIES_SIM_PATH = '../movie_recommendation/data/output/movies_similarity.csv' # path to movies similarities couples
 DATA_PATH = 'data/data_recorded.csv' # path for storing user data
 TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w200'
 MOVIE_URL = 'https://www.themoviedb.org/movie/'
@@ -149,8 +149,7 @@ def get_reccomended_movies(movie_id):
     # movie_id = int(movie_id)
     global movies_sim_data
     reccomendations_df = movies_sim_data[movies_sim_data['movieId'] == int(movie_id)]
-    # TODO: fix column index name to sim_movieId
-    reccomendations_list = reccomendations_df['sim_moveId'].values.tolist()
+    reccomendations_list = reccomendations_df['sim_movieId'].values.tolist()
     del reccomendations_df
     
     return reccomendations_list
