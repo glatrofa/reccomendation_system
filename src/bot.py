@@ -136,7 +136,8 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
     movie_list = data_utils.get_reccomended_movies(movie_id)
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
-        text = 'Here there is the reccomendation:'
+        text = 'Here there is the *reccomendation*:',
+        parse_mode = telegram.ParseMode.MARKDOWN_V2
     )
 
     genres_list = []
@@ -144,13 +145,53 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
     for movie_id in movie_list:
         movie = data_utils.get_movie_from_id(movie_id)
         genres_list.append(movie[0][5]) # save genres for explanation
-        print(movie)
+        # print(movie)
         context.bot.send_photo(
             chat_id = update.effective_chat.id,
             photo = TMDB_IMAGE_URL +
                     imdb_movie.details(movie[0][4]).poster_path,
             caption = movie[0][1].capitalize() + '\n' + MOVIE_URL + str(movie[0][4])
         )
+    # same genres
+    cf_g_mov = data_utils.cf_genres_get_similar(movie_id)
+    context.bot.send_message(
+        chat_id = update.effective_chat.id, 
+        text = 'Counterfactual output on same *GENRES*:',
+        parse_mode = telegram.ParseMode.MARKDOWN_V2
+    )
+    for movie_id in cf_g_mov:
+        movie = data_utils.get_movie_from_id(movie_id)
+        # print(movie)
+        # genres_list.append(movie[0][5]) # save genres for explanation
+        # print(movie)
+        context.bot.send_photo(
+            chat_id = update.effective_chat.id,
+            photo = TMDB_IMAGE_URL +
+                    imdb_movie.details(movie[0][4]).poster_path,
+            caption = movie[0][1].capitalize() + '\n' + MOVIE_URL + str(movie[0][4])
+        )
+    # explanation
+
+    # same tags
+    cf_g_mov = data_utils.cf_tags_get_similar(movie_id)
+    context.bot.send_message(
+        chat_id = update.effective_chat.id, 
+        text = 'Counterfactual output on same *TAGS*:',
+        parse_mode = telegram.ParseMode.MARKDOWN_V2
+    )
+    for movie_id in cf_g_mov:
+        movie = data_utils.get_movie_from_id(movie_id)
+        # print(movie)
+        # genres_list.append(movie[0][5]) # save genres for explanation
+        # print(movie)
+        context.bot.send_photo(
+            chat_id = update.effective_chat.id,
+            photo = TMDB_IMAGE_URL +
+                    imdb_movie.details(movie[0][4]).poster_path,
+            caption = movie[0][1].capitalize() + '\n' + MOVIE_URL + str(movie[0][4])
+        )
+
+
 
     return explanation(update, context, genres_list)
 
