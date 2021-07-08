@@ -142,8 +142,8 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
 
     genres_list = []
 
-    for movie_id in movie_list:
-        movie = data_utils.get_movie_from_id(movie_id)
+    for id in movie_list:
+        movie = data_utils.get_movie_from_id(id)
         genres_list.append(movie[0][5]) # save genres for explanation
         # print(movie)
         context.bot.send_photo(
@@ -154,15 +154,33 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
         )
     # same genres
     cf_g_mov = data_utils.cf_genres_get_similar(movie_id)
+    print(cf_g_mov)
     context.bot.send_message(
         chat_id = update.effective_chat.id, 
         text = 'Counterfactual output on same *GENRES*:',
         parse_mode = telegram.ParseMode.MARKDOWN_V2
     )
-    for movie_id in cf_g_mov:
-        movie = data_utils.get_movie_from_id(movie_id)
-        # print(movie)
-        # genres_list.append(movie[0][5]) # save genres for explanation
+    # for movie_id in cf_g_mov:
+    movie_sg = data_utils.get_movie_from_id(cf_g_mov)
+    # print(movie)
+    # genres_list.append(movie[0][5]) # save genres for explanation
+    # print(movie)
+    context.bot.send_photo(
+        chat_id = update.effective_chat.id,
+        photo = TMDB_IMAGE_URL +
+                imdb_movie.details(movie_sg[0][4]).poster_path,
+        caption = movie_sg[0][1].capitalize() + '\n' + MOVIE_URL + str(movie_sg[0][4])
+    )
+    # explanation
+    movie_list = data_utils.get_reccomended_movies(cf_g_mov)
+    context.bot.send_message(
+        chat_id = update.effective_chat.id, 
+        text = f'Counterfactual examples on *{movie_sg[0][1]}*:',
+        parse_mode = telegram.ParseMode.MARKDOWN_V2
+    )
+    for id in movie_list:
+        movie = data_utils.get_movie_from_id(id)
+        genres_list.append(movie[0][5]) # save genres for explanation
         # print(movie)
         context.bot.send_photo(
             chat_id = update.effective_chat.id,
@@ -170,7 +188,6 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
                     imdb_movie.details(movie[0][4]).poster_path,
             caption = movie[0][1].capitalize() + '\n' + MOVIE_URL + str(movie[0][4])
         )
-    # explanation
 
     # same tags
     cf_g_mov = data_utils.cf_tags_get_similar(movie_id)
@@ -179,10 +196,27 @@ def suggestion(update: Update, context: CallbackContext, movie_id):
         text = 'Counterfactual output on same *TAGS*:',
         parse_mode = telegram.ParseMode.MARKDOWN_V2
     )
-    for movie_id in cf_g_mov:
-        movie = data_utils.get_movie_from_id(movie_id)
-        # print(movie)
-        # genres_list.append(movie[0][5]) # save genres for explanation
+    # for movie_id in cf_g_mov:
+    movie = data_utils.get_movie_from_id(cf_g_mov)
+    # print(movie)
+    # genres_list.append(movie[0][5]) # save genres for explanation
+    # print(movie)
+    context.bot.send_photo(
+        chat_id = update.effective_chat.id,
+        photo = TMDB_IMAGE_URL +
+                imdb_movie.details(movie[0][4]).poster_path,
+        caption = movie[0][1].capitalize() + '\n' + MOVIE_URL + str(movie[0][4])
+    )
+    # explanation
+    movie_list = data_utils.get_reccomended_movies(cf_g_mov)
+    context.bot.send_message(
+        chat_id = update.effective_chat.id, 
+        text = f'Counterfactual examples on *{movie_sg[0][1]}*:',
+        parse_mode = telegram.ParseMode.MARKDOWN_V2
+    )
+    for id in movie_list:
+        movie = data_utils.get_movie_from_id(id)
+        genres_list.append(movie[0][5]) # save genres for explanation
         # print(movie)
         context.bot.send_photo(
             chat_id = update.effective_chat.id,

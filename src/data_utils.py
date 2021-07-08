@@ -66,7 +66,7 @@ def cf_genres_get_similar(movie_id):
     # df = df.iloc[0, :]
     # print("ciao")
     # print(df)
-    return reccomendations_list
+    return reccomendations_list[0]
 
 
 def cf_tags_get_similar(movie_id):
@@ -76,6 +76,8 @@ def cf_tags_get_similar(movie_id):
     #         sort_values('relevance', axis=0, ascending=False)
     recommendations_df = st_cos_sim_df[st_cos_sim_df['movieId'] == int(movie_id)]
     reccomendations_list = recommendations_df['sim_movieId'].values.tolist()
+    print(recommendations_df)
+    # print(recommendations_list)
     del recommendations_df
     # print(df.head())
     # print("ciao")
@@ -84,4 +86,4 @@ def cf_tags_get_similar(movie_id):
     # df = df.iloc[0, :]
     # print("ciao")
     # print(df)
-    return reccomendations_list
+    return reccomendations_list[0]
